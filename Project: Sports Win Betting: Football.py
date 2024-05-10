@@ -50,7 +50,9 @@ class BetWindow:
         football_match = FootballMatch()
         score1, score2 = football_match.simulate_match(self.match_name)
 
-        if team_name == football_match.winner:
+        if football_match.winner == "Draw":
+            messagebox.showinfo("Draw", f"The match ended in a draw.\nMatch Score: {score1} - {score2}")
+        elif team_name == football_match.winner:
             payout = amount * 2
             messagebox.showinfo("Congratulations!", f"You won {payout} units.\nMatch Score: {score1} - {score2}")
         else:
