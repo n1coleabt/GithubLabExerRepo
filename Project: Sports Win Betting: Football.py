@@ -21,8 +21,9 @@ class FootballMatch:
         return score1, score2
 
 class BetWindow:
-    def __init__(self, match_name):
+    def __init__(self, match_name, menu_window):
         self.match_name = match_name
+        self.menu_window = menu_window  # Store the MenuWindow instance
         self.bet_window = tk.Tk()
         self.bet_window.title("Place Bet")
 
@@ -54,9 +55,12 @@ class BetWindow:
             messagebox.showinfo("Draw", f"The match ended in a draw.\nMatch Score: {score1} - {score2}")
         elif team_name == football_match.winner:
             payout = amount * 2
+            self.menu_window.update_balance(payout)  # Update balance with winning amount
             messagebox.showinfo("Congratulations!", f"You won {payout} units.\nMatch Score: {score1} - {score2}")
         else:
+            self.menu_window.update_balance(-amount)  # Deduct bet amount from balance
             messagebox.showinfo("Sorry!", f"You lost your bet.\nMatch Score: {score1} - {score2}")
+
         self.bet_window.destroy()
 
 class MenuWindow:
@@ -96,22 +100,31 @@ class MenuWindow:
 
         quit_game_button = tk.Button(self.game_tab, text="Quit Game", command=self.quit_game)
         quit_game_button.pack(pady=10)
+        
+        # Initialize bankroll
+        self.bankroll = 1000  # Starting balance
+
+        # Display initial balance
+        self.balance_label = tk.Label(self.game_tab, text=f"Bankroll: {self.bankroll} units")
+        self.balance_label.pack()
+
+    def update_balance(self, amount):
+        self.bankroll += amount
+        self.balance_label.config(text=f"Bankroll: {self.bankroll} units")
+        
+    def update_balance(self, amount):
+        self.bankroll += amount
+        self.balance_label.config(text=f"Bankroll: {self.bankroll} units")
 
     def start_game(self):
         match_name = self.match_info_label.cget("text")
-        BetWindow(match_name)
+        BetWindow(match_name, self)  # Pass self as menu_window
 
     def play_again(self):
-        match_names = [
-            "Germany vs. France",
-            "Brazil vs. Argentina",
-            "England vs. Germany",
-            "France vs. Portugal"
-        ]
-        self.current_match_index = (self.current_match_index + 1) % len(self.match_names)
         new_match_name = self.match_names[self.current_match_index]
+        self.current_match_index = (self.current_match_index + 1) % len(self.match_names)
         self.match_info_label.config(text=new_match_name)
-        BetWindow(new_match_name)
+        BetWindow(new_match_name, self)  # Pass self as menu_window
 
     def quit_game(self):
         self.menu_window.destroy()
@@ -181,3 +194,4 @@ class GameWindow:
 if __name__ == "__main__":
     game = GameWindow()
     game.game_introduction()
+
