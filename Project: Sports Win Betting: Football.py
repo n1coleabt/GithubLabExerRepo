@@ -8,8 +8,9 @@ class FootballMatch:
         self.winner = None
 
     def simulate_match(self, match_name):
-        score1 = random.randint(0, 5)
-        score2 = random.randint(0, 5)
+        # Adjust the weights to increase winning chances for higher scores
+        score1 = random.choices(range(6), weights=[15, 20, 25, 20, 15, 5])[0]
+        score2 = random.choices(range(6), weights=[15, 20, 25, 20, 15, 5])[0]
         
         if score1 > score2:
             self.winner = match_name.split(" vs. ")[0]
@@ -18,12 +19,13 @@ class FootballMatch:
         else:
             self.winner = "Draw"
 
-        return score1, score2
+        return score1, score2, self.winner  # Also return the winner
 
 class BetWindow:
-    def __init__(self, match_name, menu_window):
+    def __init__(self, match_name, menu_window, football_match):
         self.match_name = match_name
         self.menu_window = menu_window  # Store the MenuWindow instance
+        self.football_match = football_match  # Store the FootballMatch instance
         self.bet_window = tk.Tk()
         self.bet_window.title("Place Bet")
 
@@ -48,19 +50,20 @@ class BetWindow:
         team_name = self.team_choice.get()
         amount = float(self.amount_entry.get())
 
-        football_match = FootballMatch()
-        score1, score2 = football_match.simulate_match(self.match_name)
+        # Simulate match to determine winner
+        _, _, winner = self.football_match.simulate_match(self.match_name)
 
-        if football_match.winner == "Draw":
-            messagebox.showinfo("Draw", f"The match ended in a draw.\nMatch Score: {score1} - {score2}")
-        elif team_name == football_match.winner:
+        if winner == "Draw":
+            messagebox.showinfo("Draw", f"The match ended in a draw.\nNo winners or losers.")
+        elif team_name == winner:
             payout = amount * 2
             self.menu_window.update_balance(payout)  # Update balance with winning amount
-            messagebox.showinfo("Congratulations!", f"You won {payout} units.\nMatch Score: {score1} - {score2}")
+            messagebox.showinfo("Congratulations!", f"You won {payout} units.\nMatch Winner: {winner}")
         else:
             self.menu_window.update_balance(-amount)  # Deduct bet amount from balance
-            messagebox.showinfo("Sorry!", f"You lost your bet.\nMatch Score: {score1} - {score2}")
+            messagebox.showinfo("Sorry!", f"You lost your bet.\nMatch Winner: {winner}")
 
+        self.bet_window.geometry("300x150")  # Adjust size 
         self.bet_window.destroy()
 
 class MenuWindow:
@@ -73,7 +76,11 @@ class MenuWindow:
             "Germany vs. France",
             "Brazil vs. Argentina",
             "England vs. Germany",
-            "France vs. Portugal"
+            "France vs. Portugal",
+            "Korea vs. Japan",
+            "Costa Rica vs. Mexico",
+            "Australia vs. Netherlands"
+            
         ]
         self.current_match_index = 0  # Initialize current match index
 
@@ -108,23 +115,22 @@ class MenuWindow:
         self.balance_label = tk.Label(self.game_tab, text=f"Bankroll: {self.bankroll} units")
         self.balance_label.pack()
 
-    def update_balance(self, amount):
-        self.bankroll += amount
-        self.balance_label.config(text=f"Bankroll: {self.bankroll} units")
-        
+        # Create FootballMatch instance
+        self.football_match = FootballMatch()
+
     def update_balance(self, amount):
         self.bankroll += amount
         self.balance_label.config(text=f"Bankroll: {self.bankroll} units")
 
     def start_game(self):
         match_name = self.match_info_label.cget("text")
-        BetWindow(match_name, self)  # Pass self as menu_window
+        BetWindow(match_name, self, self.football_match)  # Pass FootballMatch instance
 
     def play_again(self):
         new_match_name = self.match_names[self.current_match_index]
         self.current_match_index = (self.current_match_index + 1) % len(self.match_names)
         self.match_info_label.config(text=new_match_name)
-        BetWindow(new_match_name, self)  # Pass self as menu_window
+        BetWindow(new_match_name, self, self.football_match)  # Pass FootballMatch instance
 
     def quit_game(self):
         self.menu_window.destroy()
@@ -159,7 +165,8 @@ class PlayerInfoWindow:
 
         if player_age < 21:
             messagebox.showerror("Error", "You must be at least 21 years old to play this game.")
-            self.get_player_info_window()
+            self.player_info_window.destroy()  # Close the current window
+            self.get_player_info_window()  # Reopen the player info window
         else:
             self.player_info_window.destroy()
             MenuWindow(player_name)
@@ -190,6 +197,10 @@ class GameWindow:
         next_button.pack(pady=20)
 
         self.intro_window.mainloop()
+
+if __name__ == "__main__":
+    game = GameWindow()
+    game.game_introduction()
 
 if __name__ == "__main__":
     game = GameWindow()
